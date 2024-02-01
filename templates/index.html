@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #f4f4f4;
+        }
+        div {
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-top: 50px;
+            text-align: center;
+        }
+        form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label {
+            margin-bottom: 8px;
+            margin-right: 8px;
+        }
+        input[type="file"] {
+            margin-bottom: 12px;
+        }
+        input[type="submit"], input[type="button"] {
+            margin-top: 10px;
+            margin-right: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+        }
+        h1 {
+            color: #333333;
+        }
+        .result-table-container {
+            margin-top: 20px;
+            text-align: center;
+            overflow-y: auto;
+            height: 150px;  /* Adjust the height as needed */
+        }
+        .result-table {
+            border-collapse: collapse;
+        }
+        .result-table th, .result-table td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            $("#calculateThroughputBtn").click(function() {
+                $.ajax({
+                    type: 'POST',
+                    url: '/display_average_throughput',
+                    contentType: 'application/json;charset=UTF-8',
+                    success: function(response) {
+                        console.log(response);
+                        displayTable("#result-container-category", response.average_throughput_category);
+                        displayTable("#result-container-range", response.average_throughput_range);
+                    },
+                    error: function(error) {
+                        alert("Error calculating average throughput: " + error.responseText);
+                    }
+                });
+            });
+
+            function displayTable(containerId, data) {
+                var tableHtml = "<table class='result-table'><tr>";
+                Object.keys(data[0]).forEach(function(key) {
+                    tableHtml += "<th>" + key + "</th>";
+                });
+                tableHtml += "</tr>";
+
+                data.forEach(function(row) {
+                    tableHtml += "<tr>";
+                    Object.values(row).forEach(function(value) {
+                        tableHtml += "<td>" + value + "</td>";
+                    });
+                    tableHtml += "</tr>";
+                });
+
+
+                tableHtml += "</table>";
+                $(containerId).html("<div class='result-table-container'>" + tableHtml + "</div>");
+            }
+        });
+    </script>
+    <script>
+        $(document).ready(function() {
+            $("#zoneAnalysisBtn").click(function() {
+                var zoneAnalysisUrl = "/zone_analysis";  
+                window.open(zoneAnalysisUrl, '_blank');
+            });
+            $("#cityAnalysisBtn").click(function() {
+                var cityAnalysisUrl = "/city_analysis";  
+                window.open(cityAnalysisUrl, '_blank');
+            });
+        });
+      
+            
+        
+    </script>
+    
+</head>
+<body>
+    <div>
+        <h1>Analysis</h1>
+        <form action="/process" method="post" enctype="multipart/form-data">
+            <label for="soh_file">SOH File:</label>
+            <input type="file" name="soh_file" accept=".xlsx" required><br>
+            <label for="sales_file">Sales File:</label>
+            <input type="file" name="sales_file" accept=".xlsx" required><br>
+            <input type="submit" value="Process">
+            <div>
+                <input type="button" id="calculateThroughputBtn" value="Calculate Average Throughput (PAN INDIA)">
+                <input type="button" id="zoneAnalysisBtn"  value="Zone Wise Analysis">
+                <input type="button" id="cityAnalysisBtn" value="City Wise Analysis">
+                <div id="result-container-category" class="result-table"></div>
+                <div id="result-container-range" class="result-table"></div>
+
+            </div>
+        </form>
+        <div id="result-container"></div>
+    </div>
+</body>
+</html>

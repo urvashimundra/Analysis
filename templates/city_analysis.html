@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Wise Analysis</title>
+    <style>
+        body {
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .result-table-container {
+            margin-top: 20px;
+            text-align: center;
+            overflow-y: scroll;
+            height: 100px;
+       
+        }
+
+        .result-table {
+            border-collapse: collapse;
+            overflow-y: auto;
+            height: 200px;
+            display:block;
+            width: 100%
+        }
+
+        .result-table th, .result-table td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+            
+        }
+    </style>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            function updateRangeDropdown() {
+                var selectedCategory = $('#categoryDropdown').val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/update_ranges',
+                    data: JSON.stringify({'selected_category': selectedCategory}),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function (response) {
+                        var rangeDropdown = $('#rangeDropdown');
+                        rangeDropdown.empty();
+                        $.each(response.unique_ranges, function (index, value) {
+                            rangeDropdown.append('<option value="' + value + '">' + value + '</option>');
+                        });
+                    },
+                    error: function (error) {
+                        alert("Error updating Range dropdown: " + error.responseText);
+                    }
+                });
+            }
+
+            $('#categoryDropdown').change(function () {
+                updateRangeDropdown();
+            });
+
+            updateRangeDropdown();
+
+            function updateStoreDropdown() {
+                var selectedCity = $('#cityDropdown').val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/update_stores',
+                    data: JSON.stringify({'selected_city': selectedCity}),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function (response) {
+                        var storeDropdown = $('#storeDropdown');
+                        storeDropdown.empty();
+                        $.each(response.unique_stores, function (index, value) {
+                            storeDropdown.append('<option value="' + value + '">' + value + '</option>');
+                        });
+                    },
+                    error: function (error) {
+                        alert("Error updating Stores dropdown: " + error.responseText);
+                    }
+                });
+            }
+
+            $('#cityDropdown').change(function () {
+                updateStoreDropdown();
+            });
+
+            updateStoreDropdown();
+
+            $('#cityanalyzeButton').click(function () {
+                var selectedCity = $('#cityDropdown').val();
+                var selectedRange = $('#rangeDropdown').val();
+                var selectedStore = $('#storeDropdown').val();
+                var selectedCategory = $('#categoryDropdown').val();
+
+                $.ajax({
+                    type: 'POST',
+                    url: '/analyze_data',
+                    data: JSON.stringify({
+                        'selected_city': selectedCity,
+                        'selected_range': selectedRange,
+                        'selected_store': selectedStore,
+                        'selected_category': selectedCategory
+                    }),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function (response) {
+                        if (response && response.average_throughput) 
+                            displayResultTable('result-container-first', response.average_throughput);
+
+                        if (response && response.average_throughput_range) 
+                            displayResultTable('result-container-second', response.average_throughput_range);
+
+                        if (response && response.average_throughput_city) 
+                            displayResultTable('result-container-third', response.average_throughput_city);
+
+                        if (response && response.average_throughput_category) 
+                            displayResultTable('result-container-fourth', response.average_throughput_category);
+                       
+                    },
+                    error: function (xhr, status, error) {
+                    console.error("Error analyzing data:", error);
+                    console.log("XHR status:", status);
+                    console.log("XHR response:", xhr.responseText);
+                    alert("Error analyzing data. Check the console for details.");
+}
+                });
+            });
+
+            function displayResultTable(containerId, data) {
+                var resultContainer = $('#' + containerId);
+                resultContainer.empty();
+
+                if (data.length > 0) {
+                    var table = $('<table class="result-table"></table>');
+                    var headerRow = $('<tr></tr>');
+
+                    // Assuming the first object in the array has the keys
+                    Object.keys(data[0]).forEach(function (key) {
+                        headerRow.append('<th>' + key + '</th>');
+                    });
+
+                    table.append(headerRow);
+
+                    data.forEach(function (row) {
+                        var tableRow = $('<tr></tr>');
+                        Object.values(row).forEach(function (value) {
+                            tableRow.append('<td>' + value + '</td>');
+                        });
+                        table.append(tableRow);
+                    });
+
+                    resultContainer.append(table);
+                } else {
+                    resultContainer.append('<p>No data available.</p>');
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+    <h1>City Wise Analysis</h1>
+    <br>
+    <form>
+        <br>
+        <br>
+        <br>
+        <label for="cityDropdown">Select City:</label>
+        <select id="cityDropdown">
+            <option value="">Select a City</option>
+            {% for city in unique_cities %}
+                <option value="{{ city }}">{{ city }}</option>
+            {% endfor %}
+        </select>
+
+        <br>
+
+        <label for="storeDropdown">Select Store:</label>
+        <select id="storeDropdown">
+            <option value="">Select a Store</option>
+        </select>
+
+        <br>
+
+        <label for="categoryDropdown">Select Category:</label>
+        <select id="categoryDropdown">
+            <option value="">Select a Category</option>
+            {% for category in unique_categories %}
+                <option value="{{ category }}">{{ category }}</option>
+            {% endfor %}
+        </select>
+
+        <br>
+        <label for="rangeDropdown">Select Range:</label>
+        <select id="rangeDropdown">
+            <option value="">Select a Range</option>
+        </select>
+        <br>
+        <button type="button" id="cityanalyzeButton">Analyze</button>
+        <br>
+        <div id="result-container-first" class="result-table"></div>
+        <br>
+        <div id="result-container-second" class="result-table"></div>
+        <br>
+        <div id="result-container-third" class="result-table"></div>
+        <br>
+        <div id="result-container-fourth" class="result-table"></div>
+        <br>
+    </form>
+    <div id="result-table-container"></div>
+</body>
+</html>

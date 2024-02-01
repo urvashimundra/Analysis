@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zone Wise Analysis</title>
+    <style>
+        style>
+        body {
+            padding: 20px;
+            display: flex;
+            justify-content: center; /* Center horizontally */
+            min-height: 100vh;
+            margin: 0;
+        }
+        .result-table-container {
+        margin-top: 20px;
+        text-align: center;
+        overflow-y: auto; 
+        max-height: 10px;  /* Adjust the height as needed */
+    }
+
+        .result-table {
+        border-collapse: collapse;
+    }
+
+        .result-table th, .result-table td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+        
+    </style>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            function updateRangeDropdown() {
+                var selectedCategory = $('#categoryDropdown').val();
+    
+                $.ajax({
+                    type: 'POST',
+                    url: '/update_ranges',
+                    data: JSON.stringify({'selected_category': selectedCategory}),
+                    contentType: 'application/json',
+                    dataType: 'json',
+                    success: function(response) {
+                        var rangeDropdown = $('#rangeDropdown');
+                        rangeDropdown.empty();
+                        $.each(response.unique_ranges, function(index, value){
+                            rangeDropdown.append('<option value="' + value + '">' + value + '</option>');
+                        });
+                    },
+                    error: function(error) {
+                        alert("Error updating Range dropdown: " + error.responseText);
+                    }
+                });
+            }
+    
+            $('#categoryDropdown').change(function() {
+                updateRangeDropdown();
+            });
+    
+            updateRangeDropdown();
+
+            $('#analyzeButton').click(function() {
+            var selectedZone = $('#zoneDropdown').val();
+            var selectedRange = $('#rangeDropdown').val();
+            var selectedCategory = $('#categoryDropdown').val();
+            var selectedPack = $('#packDropdown').val();
+
+            $.ajax({
+                type: 'POST',
+                url: '/analyze',
+                data: JSON.stringify({
+                    'selected_zone': selectedZone,
+                    'selected_range': selectedRange,
+                    'selected_category': selectedCategory,
+                    'selected_pack': selectedPack
+                }),
+                contentType: 'application/json;charset=UTF-8',
+                dataType: 'json',
+                success: function(response) {
+                    displayTable("#result-container-category", response.average_throughput_category);
+                },
+                error: function(error) {
+                    alert("Error analyzing data: " + error.responseText);
+                }
+            });
+            function displayTable(containerId, data) {
+                    // Create a table element
+                    var tableHtml = "<table class='result-table'><tr>";
+
+                    // Check if data is not empty
+                    if (data.length > 0) {
+                        // Add table headers
+                        Object.keys(data[0]).forEach(function(key) {
+                            tableHtml += "<th>" + key + "</th>";
+                        });
+
+                        tableHtml += "</tr>";
+
+                        // Add table rows
+                        data.forEach(function(row) {
+                            tableHtml += "<tr>";
+                            Object.values(row).forEach(function(value) {
+                                tableHtml += "<td>" + value + "</td>";
+                            });
+                            tableHtml += "</tr>";
+                        });
+                    } else {
+                        // If data is empty, display a message or handle it accordingly
+                        tableHtml += "<th>No data available</th></tr>";
+                    }
+
+                    tableHtml += "</table>";
+
+                    // Set the HTML of the container with the table
+                    $(containerId).html(tableHtml);
+}
+
+        });
+        });
+        
+    </script>
+</head>
+<body>
+    <h1>Zone Wise Analysis</h1>
+
+    <form>
+        <label for="zoneDropdown">Zone:</label>
+        <select id="zoneDropdown">
+            <option value="">Select a Zone</option>
+        {% for zone in unique_zones %}
+            <option value="{{ zone }}">{{ zone }}</option>
+        {% endfor %}
+        </select>
+        
+        <br>
+
+        <label for="categoryDropdown">Category:</label>
+        <select id="categoryDropdown">
+            <option value="">Select a Category</option>
+        {% for category in unique_categories %}
+            <option value="{{ category }}">{{ category }}</option>
+        {% endfor %}
+        </select>
+
+        <br>
+
+        <label for="rangeDropdown">Range:</label>
+        <select id="rangeDropdown">
+            <option value="">Select a Range</option>
+        </select>
+
+        <br>
+
+        <label for="packDropdown">Pack:</label>
+        <select id="packDropdown">
+            <option value="">Select a Pack</option>
+        {% for pack in unique_packs %}
+            <option value="{{ pack }}">{{ pack }}</option>
+        {% endfor %}
+        </select>
+        <button type="button" id="analyzeButton">Analyze</button>
+        <br>
+        <div id="result-container-category" class="result-table"></div>
+    </form>
+    <div id="result-table-container"></div>
+</body>
+</html>
