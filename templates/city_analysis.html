@@ -5,10 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>City Wise Analysis</title>
     <style>
+        style>
         body {
             padding: 20px;
             display: flex;
-            justify-content: center;
+            justify-content: center; /* Center horizontally */
             min-height: 100vh;
             margin: 0;
         }
@@ -97,6 +98,7 @@
             updateStoreDropdown();
 
             $('#cityanalyzeButton').click(function () {
+                $('#result-container-first, #result-container-second, #result-container-third, #result-container-fourth').empty();
                 var selectedCity = $('#cityDropdown').val();
                 var selectedRange = $('#rangeDropdown').val();
                 var selectedStore = $('#storeDropdown').val();
@@ -169,11 +171,9 @@
 </head>
 <body>
     <h1>City Wise Analysis</h1>
-    <br>
+    
     <form>
-        <br>
-        <br>
-        <br>
+
         <label for="cityDropdown">Select City:</label>
         <select id="cityDropdown">
             <option value="">Select a City</option>

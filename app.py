@@ -2,11 +2,9 @@ from flask import Flask, render_template, send_file,request,send_from_directory,
 import pandas as pd
 from werkzeug.utils import secure_filename
 import os
-from flask_ngrok import run_with_ngrok
 import numpy as np
 
 app = Flask(__name__)
-run_with_ngrok(app)
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'xlsx'}
 
