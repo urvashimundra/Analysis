@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Analysis</title>
     <style>
-        style>
         body {
-            padding: 20px;
             display: flex;
-            justify-content: center; /* Center horizontally */
+            justify-content: center;
+            align-items: flex-start;
             min-height: 100vh;
             margin: 0;
+            background-color: #f4f4f4;
         }
         div {
             background-color: #ffffff;
@@ -71,6 +71,8 @@
                         console.log(response);
                         displayTable("#result-container-category", response.average_throughput_category);
                         displayTable("#result-container-range", response.average_throughput_range);
+                        displayTable("#result-container-store", response.average_throughput_store); 
+                        
                     },
                     error: function(error) {
                         alert("Error calculating average throughput: " + error.responseText);
@@ -79,6 +81,11 @@
             });
 
             function displayTable(containerId, data) {
+                if (!data || data.length === 0) {
+                    console.error("No data available to display in table.");
+                    return;
+                }
+
                 var tableHtml = "<table class='result-table'><tr>";
                 Object.keys(data[0]).forEach(function(key) {
                     tableHtml += "<th>" + key + "</th>";
@@ -131,6 +138,7 @@
                 <input type="button" id="cityAnalysisBtn" value="City Wise Analysis">
                 <div id="result-container-category" class="result-table"></div>
                 <div id="result-container-range" class="result-table"></div>
+                <div id="result-container-store" class="result-table"></div>
 
             </div>
         </form>

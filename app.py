@@ -3,8 +3,9 @@ import pandas as pd
 from werkzeug.utils import secure_filename
 import os
 import numpy as np
+app = Flask(__name__) 
 
-app = Flask(__name__)
+
 UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'xlsx'}
 
@@ -117,26 +118,31 @@ def process():
                 
                         for pack_val in range_data['Pack'].unique():
                             pack_data = range_data[range_data['Pack'] == pack_val]
-                
-                            for month in range(1, 13):
-                                monthly_data = pack_data[pack_data['DATE'].dt.month == month]
-                                total_soh = monthly_data['Stock_Qty'].sum()
-                                distinct_dates = monthly_data['DATE'].nunique()
+
+                            for year in pack_data['DATE'].dt.year.unique():  # Loop through unique years in pack_data
+                                    year_data = pack_data[pack_data['DATE'].dt.year == year]
+
                     
-                                if distinct_dates != 0:
-                                    average_soh_per_date = total_soh / distinct_dates
-                                else:
-                                    average_soh_per_date = np.nan  # or set to another appropriate value
-                    
+                                    for month in range(1, 13):
+                                        monthly_data = year_data[year_data['DATE'].dt.month == month]
+                                        total_soh = monthly_data['Stock_Qty'].sum()
+                                        distinct_dates = monthly_data['DATE'].nunique()
                             
-                                result_df = pd.concat([result_df, pd.DataFrame({
-                                        'SITE': [store_code],
-                                        'Range': [range_val],
-                                        'Category' : [category],
-                                        'Month': [month],
-                                        'Pack': [pack_val],
-                                        'Average_SOH': [average_soh_per_date],
-                                })])
+                                        if distinct_dates != 0:
+                                            average_soh_per_date = total_soh / distinct_dates
+                                        else:
+                                            average_soh_per_date = np.nan  # or set to another appropriate value
+                            
+                                    
+                                        result_df = pd.concat([result_df, pd.DataFrame({
+                                                'SITE': [store_code],
+                                                'Range': [range_val],
+                                                'Category' : [category],
+                                                'Month': [month],
+                                                'Year' : [year],
+                                                'Pack': [pack_val],
+                                                'Average_SOH': [average_soh_per_date]
+                                        })])
 
 
 
@@ -149,7 +155,7 @@ def process():
             output = pd.merge(result_store_category, result_df, on=[ 'Month','SITE','Range','Category','Pack'])
             output['ThroughputSales'] = (output['QTY_SOLD'] / output['Average_SOH']) * 100
             output['Throughput'] = (output['ThroughputSales']).apply(lambda x: f'{x:.2f}%')
-            store_mapping = {'SSL 294': 'BENGALURU', 'SSL 121': 'LUCKNOW', 'SSL 182': 'JAIPUR', 'SSL 103': 'HYDERABAD', 'SSL 114': 'MUMBAI', 'SSL 128': 'KOLKATA', 'SSL 154': 'HYDERABAD', 'SSL 170': 'NOIDA', 'SSL 478': 'GURGAON', 'SSL 188': 'KOLKATA', 'SSL 359': 'BHUBANESHWAR', 'SSL 199': 'VISHAKHAPATNAM', 'SSL 116': 'BENGALURU', 'SSL 262': 'CALICUT', 'SSL 165': 'NEW DELHI', 'SSL 484': 'KOLKATA', 'SSL 158': 'VIJAYWADA', 'SSL 112': 'KOLKATA', 'SSL 269': 'HYDERABAD', 'SSL 223': 'PUNE', 'SSL 255': 'GHAZIABAD', 'SSL 126': 'BENGALURU', 'SSL 8511': 'INDORE', 'SSL 185': 'SURAT', 'SSL 346': 'LUCKNOW', 'SSL 8503': 'FARIDABAD', 'SSL 159': 'COIMBATORE', 'SSL 8523': 'BENGALURU', 'SSL150': 'AURANGABAD', 'SSL 115': 'KOLKATA', 'SSL 450': 'LUCKNOW', 'SSL 229': 'HYDERABAD', 'SSL 156': 'DURGAPUR', 'SSL 290': 'NOIDA', 'SSL 147': 'NEW DELHI', 'SSL 259': 'NOIDA', 'SSL 166': 'RAIPUR', 'SSL 120': 'GHAZIABAD', 'SSL 253': 'KOLHAPUR', 'SSL 117': 'MUMBAI', 'SSL 174': 'CHANDIGARH', 'SSL 167': 'SILIGURI', 'SSL 153': 'MUMBAI', 'SSL 273': 'PUNE', 'SSL 8520': 'JAMMU', 'SSL 851': 'THIRUVANANTHAPURAM', 'SSL 196': 'VADODARA', 'SSL 155': 'BHOPAL', 'SSL 102': 'BENGALURU', 'SSL 143': 'BENGALURU', 'SSL 106': 'CHENNAI', 'SSL 331': 'CHENNAI', 'SSL 162': 'MUMBAI', 'SSL 101': 'MUMBAI', 'SSL 257': 'KOLKATA', 'SSL 272': 'MUMBAI', 'SSL 144': 'MUMBAI', 'SSL 8513': 'GUNTUR', 'SSL 8527': 'PUNE', 'SSL 177': 'MUMBAI', 'SSL 122': 'HYDERABAD', 'SSL 151': 'AHMEDABAD', 'SSL 127': 'NEW DELHI', 'SSL 130': 'NOIDA', 'SSL 109': 'MUMBAI', 'SSL 184': 'GURGAON', 'SSL 183': 'PUNE', 'SSL 268': 'PILERNE', 'SSL 225': 'VARANASI', 'SSL 499': 'MUMBAI', 'SSL 8530': 'KOCHI', 'SSL 8508': 'SURAT', 'SSL 110': 'GURGAON', 'SSL 164': 'PUNE', 'SSL 280': 'JAIPUR', 'SSL 8534': 'BENGALURU', 'SSL 310': 'NEW DELHI', 'SSL 186': 'AGRA', 'SSL 496': 'SILIGURI', 'SSL 161': 'MYSORE', 'SSL 175': 'LATUR', 'SSL 267': 'NEW DELHI', 'SSL 312': 'RANCHI', 'SSL 191': 'LUDHIANA', 'SSL 8501': 'NOIDA', 'SSL 138': 'HYDERABAD', 'SSL 146': 'AMRITSAR', 'SSL 168': 'INDORE', 'SSL 171': 'JALANDHAR', 'SSL 226': 'LUCKNOW', 'SSL 227': 'UDAIPUR', 'SSL 228': 'JODHPUR', 'SSL 230': 'NEW DELHI', 'SSL 274': 'BENGALURU', 'SSL 314': 'GUWAHATI', 'SSL 330': 'DEHRADUN', 'SSL 347': 'NASHIK', 'SSL 358': 'JAIPUR', 'SSL 500': 'GHAZIABAD', 'SSL 8502': 'RANCHI', 'SSL 8505': 'MUMBAI', 'SSL 8506': 'MUMBAI', 'SSL 8507': 'ROURKELA', 'SSL 8510': 'AJMER', 'SSL 8512': 'GWALIOR', 'SSL 8514': 'PATNA', 'SSL 8515': 'ALLAHABAD/PRAYAGRAJ', 'SSL 8521': 'KOLKATA', 'SSL 8528': 'KOTA', 'SSL 8529': 'AGARTALA', 'SSL 8540': 'HYDERABAD', 'SSL 8547': 'CHENNAI', 'F1UH': 'AHMEDABAD', 'F1NI': 'VADODARA', 'F1ZC': 'BENGALURU', 'F1NH': 'MUMBAI', 'F1TH': 'PUNE', 'F1AD': 'PUNE', 'F1JH': 'BENGALURU', 'F1YH': 'MUMBAI', 'F1FI': 'BHUBANESHWAR', 'F1KI': 'KOCHI', 'F1LH': 'HYDERABAD', 'F1DI': 'GUWAHATI', 'F1FH': 'INDORE', 'F1EI': 'JAIPUR', 'F1XH': 'LUCKNOW', 'F1BD': 'NAGPUR', 'F1CD': 'PATNA', 'F1HH': 'SILIGURI', 'F1SH': 'THIRUVANANTHAPURAM', 'F1VH': 'VISHAKHAPATNAM', 'F1JI': 'NEW DELHI', 'F1PI': 'MANGALORE','F1OI':'GURUGRAM','F1LI':'HYDERABAD'}
+            store_mapping = {'SSL 294': 'BENGALURU', 'SSL 121': 'LUCKNOW', 'SSL 182': 'JAIPUR', 'SSL 103': 'HYDERABAD', 'SSL 114': 'MUMBAI', 'SSL 128': 'KOLKATA', 'SSL 154': 'HYDERABAD', 'SSL 170': 'NOIDA', 'SSL 478': 'GURGAON', 'SSL 188': 'KOLKATA', 'SSL 359': 'BHUBANESHWAR', 'SSL 199': 'VISHAKHAPATNAM', 'SSL 116': 'BENGALURU', 'SSL 262': 'CALICUT', 'SSL 165': 'NEW DELHI', 'SSL 484': 'KOLKATA', 'SSL 158': 'VIJAYWADA', 'SSL 112': 'KOLKATA', 'SSL 269': 'HYDERABAD', 'SSL 223': 'PUNE', 'SSL 255': 'GHAZIABAD', 'SSL 126': 'BENGALURU', 'SSL 8511': 'INDORE', 'SSL 185': 'SURAT', 'SSL 346': 'LUCKNOW', 'SSL 8503': 'FARIDABAD', 'SSL 159': 'COIMBATORE', 'SSL 8523': 'BENGALURU', 'SSL150': 'AURANGABAD', 'SSL 115': 'KOLKATA', 'SSL 450': 'LUCKNOW', 'SSL 229': 'HYDERABAD', 'SSL 156': 'DURGAPUR', 'SSL 290': 'NOIDA', 'SSL 147': 'NEW DELHI', 'SSL 259': 'NOIDA', 'SSL 166': 'RAIPUR', 'SSL 120': 'GHAZIABAD', 'SSL 253': 'KOLHAPUR', 'SSL 117': 'MUMBAI', 'SSL 174': 'CHANDIGARH', 'SSL 167': 'SILIGURI', 'SSL 153': 'MUMBAI', 'SSL 273': 'PUNE', 'SSL 8520': 'JAMMU', 'SSL 851': 'THIRUVANANTHAPURAM', 'SSL 196': 'VADODARA', 'SSL 155': 'BHOPAL', 'SSL 102': 'BENGALURU', 'SSL 143': 'BENGALURU', 'SSL 106': 'CHENNAI', 'SSL 331': 'CHENNAI', 'SSL 162': 'MUMBAI', 'SSL 101': 'MUMBAI', 'SSL 257': 'KOLKATA', 'SSL 272': 'MUMBAI', 'SSL 144': 'MUMBAI', 'SSL 8513': 'GUNTUR', 'SSL 8527': 'PUNE', 'SSL 177': 'MUMBAI', 'SSL 122': 'HYDERABAD', 'SSL 151': 'AHMEDABAD', 'SSL 127': 'NEW DELHI', 'SSL 130': 'NOIDA', 'SSL 109': 'MUMBAI', 'SSL 184': 'GURGAON', 'SSL 183': 'PUNE', 'SSL 268': 'PILERNE', 'SSL 225': 'VARANASI', 'SSL 499': 'MUMBAI', 'SSL 8530': 'KOCHI', 'SSL 8508': 'SURAT', 'SSL 110': 'GURGAON', 'SSL 164': 'PUNE', 'SSL 280': 'JAIPUR', 'SSL 8534': 'BENGALURU', 'SSL 310': 'NEW DELHI', 'SSL 186': 'AGRA', 'SSL 496': 'SILIGURI', 'SSL 161': 'MYSORE', 'SSL 175': 'LATUR', 'SSL 267': 'NEW DELHI', 'SSL 312': 'RANCHI', 'SSL 191': 'LUDHIANA', 'SSL 8501': 'NOIDA', 'SSL 138': 'HYDERABAD', 'SSL 146': 'AMRITSAR', 'SSL 168': 'INDORE', 'SSL 171': 'JALANDHAR', 'SSL 226': 'LUCKNOW', 'SSL 227': 'UDAIPUR', 'SSL 228': 'JODHPUR', 'SSL 230': 'NEW DELHI', 'SSL 274': 'BENGALURU', 'SSL 314': 'GUWAHATI', 'SSL 330': 'DEHRADUN', 'SSL 347': 'NASHIK', 'SSL 358': 'JAIPUR', 'SSL 500': 'GHAZIABAD', 'SSL 8502': 'RANCHI', 'SSL 8505': 'MUMBAI', 'SSL 8506': 'MUMBAI', 'SSL 8507': 'ROURKELA', 'SSL 8510': 'AJMER', 'SSL 8512': 'GWALIOR', 'SSL 8514': 'PATNA', 'SSL 8515': 'ALLAHABAD/PRAYAGRAJ', 'SSL 8521': 'KOLKATA', 'SSL 8528': 'KOTA', 'SSL 8529': 'AGARTALA', 'SSL 8540': 'HYDERABAD', 'SSL 8547': 'CHENNAI', 'F1UH': 'AHMEDABAD', 'F1NI': 'VADODARA', 'F1ZC': 'BENGALURU', 'F1NH': 'MUMBAI', 'F1TH': 'PUNE', 'F1AD': 'PUNE', 'F1JH': 'BENGALURU', 'F1YH': 'MUMBAI', 'F1FI': 'BHUBANESHWAR', 'F1KI': 'KOCHI', 'F1LH': 'HYDERABAD', 'F1DI': 'GUWAHATI', 'F1FH': 'INDORE', 'F1EI': 'JAIPUR', 'F1XH': 'LUCKNOW', 'F1BD': 'NAGPUR', 'F1CD': 'PATNA', 'F1HH': 'SILIGURI', 'F1SH': 'THIRUVANANTHAPURAM', 'F1VH': 'VISHAKHAPATNAM', 'F1JI': 'NEW DELHI', 'F1PI': 'MANGALORE','F1OI':'GURUGRAM','F1LI':'HYDERABAD','SSL 150':'AURANGABAD'}
             region_mapping = {
                 'AHMEDABAD':'West',
                 'KOCHI': 'South',
@@ -232,13 +238,18 @@ def calculate_average_throughput():
             average_throughput_category = output.groupby('Category')['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput_range = output.groupby(['Category', 'Range'])['ThroughputSales'].mean().astype(int).reset_index()
 
+            average_throughput_store = output.groupby(['STORE'])['ThroughputSales'].mean().astype(int).reset_index()
+
             average_throughput_category['ThroughputSales']=average_throughput_category['ThroughputSales'].apply(lambda x: f'{x}%')
             average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
+            average_throughput_store['ThroughputSales']=average_throughput_store['ThroughputSales'].apply(lambda x: f'{x}%')
 
             result_data = {
             'average_throughput_category': average_throughput_category.to_dict(orient='records'),
-            'average_throughput_range': average_throughput_range.to_dict(orient='records')
+            'average_throughput_range': average_throughput_range.to_dict(orient='records'),
+            'average_throughput_store' : average_throughput_store.to_dict(orient = 'records')
         }
+            print(result_data)
 
             return jsonify(result_data)
 
@@ -257,30 +268,56 @@ def update_ranges():
         return jsonify({'error': f"Error fetching ranges: {error_message}"})
     
 
-        
-
 @app.route('/zone_analysis')
 def zone_analysis():
     unique_zones = ['North', 'South', 'East', 'West']  
     unique_categories = output['Category'].unique().tolist() + ['All']
     unique_ranges = []  
     unique_packs = ['(PACK OF 1)', '(PACK OF 2)', '(PACK OF 3)', 'All']
+    months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
     return render_template(
         'zone_analysis.html',
         unique_zones=unique_zones,
         unique_categories=unique_categories,
         unique_ranges=unique_ranges,
-        unique_packs=unique_packs
+        unique_packs=unique_packs,
+        months=months 
     )
 
 @app.route('/analyze', methods=['POST'])
 def analyze():
     try:
+        month_name_to_num = {
+                'January': 1,
+                'February': 2,
+                'March': 3,
+                'April': 4,
+                'May': 5,
+                'June': 6,
+                'July': 7,
+                'August': 8,
+                'September': 9,
+                'October': 10,
+                'November': 11,
+                'December': 12
+            }
         selected_zone_value = request.json.get('selected_zone')
         selected_range_value = request.json.get('selected_range')
         selected_category_value = request.json.get('selected_category')
         selected_pack_value = request.json.get('selected_pack')
-                
+        selected_start_month = request.json.get('selected_start_month')
+        selected_end_month = request.json.get('selected_end_month')
+        entered_start_year = request.json.get('entered_start_year')
+        entered_end_year = request.json.get('entered_end_year')
+        entered_end_year= int(entered_end_year)
+        entered_start_year= int(entered_start_year)
+        selected_start_month = month_name_to_num[selected_start_month]
+        selected_end_month = month_name_to_num[selected_end_month]
+        if (entered_start_year==entered_end_year):
+            output_month = output[(output['Year'] == entered_start_year) & (output['Month'] >= selected_start_month) & (output['Month'] <= selected_end_month) ]
+        else:
+            output_month = output[((output['Year'] == entered_start_year) & (output['Month'] >= selected_start_month)) |((output['Year'] == entered_end_year) & (output['Month'] <= selected_end_month)) ]
         if selected_zone_value == "Select a Zone":
             message = "Select a Zone!"
             return jsonify({'error': f"Error analyzing data: {message}"})
@@ -294,7 +331,7 @@ def analyze():
             return jsonify({'error': f"Error analyzing data: {message}"})
             
         if (selected_category_value == 'All') & (selected_pack_value == 'All'):
-            filtered_output = output[(output['ZONE'] == selected_zone_value)]
+            filtered_output = output_month[(output_month['ZONE'] == selected_zone_value)]
             average_throughput = filtered_output.groupby(['ZONE','Category'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
         
@@ -304,7 +341,7 @@ def analyze():
         }
 
         elif (selected_category_value == 'All') & (selected_pack_value != 'All'):
-            filtered_output = output[(output['ZONE'] == selected_zone_value) & (output['Pack'] == selected_pack_value)]
+            filtered_output = output_month[(output_month['ZONE'] == selected_zone_value) & (output_month['Pack'] == selected_pack_value)]
             average_throughput = filtered_output.groupby(['ZONE','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
             
@@ -313,8 +350,8 @@ def analyze():
         }
 
         elif (selected_range_value == 'All') & (selected_pack_value == 'All'):
-            filtered_output = output[(output['ZONE'] == selected_zone_value) &
-                                         (output['Category'] == selected_category_value)]
+            filtered_output = output_month[(output_month['ZONE'] == selected_zone_value) &
+                                         (output_month['Category'] == selected_category_value)]
             average_throughput = filtered_output.groupby(['ZONE','Category', 'Range'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
             result_data = {
@@ -322,8 +359,8 @@ def analyze():
         }
         
         elif (selected_range_value == 'All') & (selected_pack_value != 'All'):
-            filtered_output = output[(output['ZONE'] == selected_zone_value) &
-                                         (output['Category'] == selected_category_value) & (output['Pack'] == selected_pack_value)]
+            filtered_output = output_month[(output_month['ZONE'] == selected_zone_value) &
+                                         (output_month['Category'] == selected_category_value) & (output_month['Pack'] == selected_pack_value)]
             average_throughput = filtered_output.groupby(['ZONE','Category', 'Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
             result_data = {
@@ -331,9 +368,9 @@ def analyze():
         }
             
         elif (selected_category_value != 'All') & (selected_pack_value == 'All') & (selected_range_value != 'All'):
-            filtered_output = output[(output['ZONE'] == selected_zone_value) &
-                                         (output['Category'] == selected_category_value) &
-                                         (output['Range'] == selected_range_value)]
+            filtered_output = output_month[(output_month['ZONE'] == selected_zone_value) &
+                                         (output_month['Category'] == selected_category_value) &
+                                         (output_month['Range'] == selected_range_value)]
             average_throughput = filtered_output.groupby(['ZONE','Category', 'Range'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
             result_data = {
@@ -341,9 +378,9 @@ def analyze():
         }
             
         else:
-            filtered_output = output[(output['ZONE'] == selected_zone_value) &
-                                         (output['Category'] == selected_category_value) &
-                                         (output['Range'] == selected_range_value) & (output['Pack'] == selected_pack_value)]
+            filtered_output = output_month[(output_month['ZONE'] == selected_zone_value) &
+                                         (output_month['Category'] == selected_category_value) &
+                                         (output_month['Range'] == selected_range_value) & (output_month['Pack'] == selected_pack_value)]
             average_throughput = filtered_output['ThroughputSales'].mean()
         
             result_data = {
@@ -362,12 +399,17 @@ def city_analysis():
     unique_categories = output['Category'].unique().tolist()+['All']
     unique_ranges = []
     unique_stores =[]
+    unique_packs = ['(PACK OF 1)', '(PACK OF 2)', '(PACK OF 3)', 'All']
+    months = ['January','February','March','April','May','June','July','August','September','October','November','December']
+
 
     return render_template('city_analysis.html',
                            unique_cities=unique_cities,
                            unique_categories=unique_categories,
                            unique_ranges=unique_ranges,
-                           unique_stores=unique_stores)
+                           unique_stores=unique_stores,
+                           unique_packs=unique_packs,
+                           months = months)
 
 @app.route('/update_stores', methods=['POST'])        
 def update_stores():
@@ -384,25 +426,77 @@ def update_stores():
 def analyze_data():
     
     try:
+        month_name_to_num = {
+                'January': 1,
+                'February': 2,
+                'March': 3,
+                'April': 4,
+                'May': 5,
+                'June': 6,
+                'July': 7,
+                'August': 8,
+                'September': 9,
+                'October': 10,
+                'November': 11,
+                'December': 12
+            }
         selected_city_value = request.json['selected_city']
         selected_range_value = request.json['selected_range']
         selected_store_value = request.json['selected_store']
         selected_category_value = request.json['selected_category']
+        selected_pack_value=request.json['selected_pack']
+        selected_start_month = request.json.get('selected_start_month')
+        selected_end_month = request.json.get('selected_end_month')
+        entered_start_year = request.json.get('entered_start_year')
+        entered_end_year = request.json.get('entered_end_year')
+        entered_end_year= int(entered_end_year)
+        entered_start_year= int(entered_start_year)
+        selected_start_month = month_name_to_num[selected_start_month]
+        selected_end_month = month_name_to_num[selected_end_month]
+        if (entered_start_year==entered_end_year):
+            output_month = output[(output['Year'] == entered_start_year) & (output['Month'] >= selected_start_month) & (output['Month'] <= selected_end_month) ]
+        else:
+            output_month = output[((output['Year'] == entered_start_year) & (output['Month'] >= selected_start_month)) |((output['Year'] == entered_end_year) & (output['Month'] <= selected_end_month)) ]
 
-        if(selected_city_value == 'All')&(selected_category_value == 'All'):
-            average_throughput = output.groupby(['CITY','STORE','Category'])['ThroughputSales'].mean().astype(int).reset_index()
+        if(selected_city_value == 'All')&(selected_category_value == 'All')&(selected_pack_value=='All'):
+            average_throughput = output_month.groupby(['CITY','STORE','Category'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
             average_throughput.fillna(0, inplace=True)
 
-            average_throughput_range = output.groupby(['CITY','STORE','Category','Range'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_range = output_month.groupby(['CITY','STORE','Category','Range'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
             average_throughput_range.fillna(0, inplace=True)
 
-            average_throughput_city = output.groupby(['CITY','Range','Category'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_city = output_month.groupby(['CITY','Range','Category'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput_city['ThroughputSales']=average_throughput_city['ThroughputSales'].apply(lambda x: f'{x}%')
             average_throughput_city.fillna(0, inplace=True)
 
-            average_throughput_category = output.groupby(['CITY','Category'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_category = output_month.groupby(['CITY','Category'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_category['ThroughputSales']=average_throughput_category['ThroughputSales'].apply(lambda x: f'{x}%')
+            average_throughput_category.fillna(0, inplace=True)
+
+            result_data = {
+                'average_throughput': average_throughput.to_dict(orient='records'),
+                'average_throughput_range': average_throughput_range.to_dict(orient='records'),
+                'average_throughput_city': average_throughput_city.to_dict(orient='records'),
+                'average_throughput_category': average_throughput_category.to_dict(orient='records')
+            }
+        
+        elif(selected_city_value == 'All')&(selected_category_value == 'All')&(selected_pack_value!='All'):
+            filtered_output = output_month[(output_month['Pack'] == selected_pack_value)]
+            average_throughput = filtered_output.groupby(['CITY','STORE','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
+            average_throughput.fillna(0, inplace=True)
+
+            average_throughput_range = filtered_output.groupby(['CITY','STORE','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
+            average_throughput_range.fillna(0, inplace=True)
+
+            average_throughput_city = filtered_output.groupby(['CITY','Range','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_city['ThroughputSales']=average_throughput_city['ThroughputSales'].apply(lambda x: f'{x}%')
+            average_throughput_city.fillna(0, inplace=True)
+
+            average_throughput_category = filtered_output.groupby(['CITY','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput_category['ThroughputSales']=average_throughput_category['ThroughputSales'].apply(lambda x: f'{x}%')
             average_throughput_category.fillna(0, inplace=True)
 
@@ -413,8 +507,8 @@ def analyze_data():
                 'average_throughput_category': average_throughput_category.to_dict(orient='records')
             }
 
-        elif(selected_city_value == 'All')&(selected_category_value != 'All')&(selected_range_value != 'All'):
-            filtered_output = output[(output['Category'] == selected_category_value)& (output['Range'] == selected_range_value)]
+        elif(selected_city_value == 'All')&(selected_category_value != 'All')&(selected_range_value != 'All')&(selected_pack_value == 'All'):
+            filtered_output = output_month[(output_month['Category'] == selected_category_value)& (output_month['Range'] == selected_range_value)]
             average_throughput = filtered_output.groupby(['CITY','Category','Range'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
@@ -426,8 +520,41 @@ def analyze_data():
                 'average_throughput_range': average_throughput_range.to_dict(orient='records'),
             }
 
-        elif(selected_city_value == 'All')&(selected_category_value != 'All')&(selected_range_value == 'All'):
-            filtered_output = output[(output['Category'] == selected_category_value)]
+        elif(selected_city_value == 'All')&(selected_category_value != 'All')&(selected_range_value != 'All')&(selected_pack_value != 'All'):
+            filtered_output = output_month[(output_month['Category'] == selected_category_value)& (output_month['Range'] == selected_range_value) & (output_month['Pack'] == selected_pack_value)]
+            average_throughput = filtered_output.groupby(['CITY','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_range = filtered_output.groupby(['CITY','STORE','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            result_data = {
+                'average_throughput': average_throughput.to_dict(orient='records'),
+                'average_throughput_range': average_throughput_range.to_dict(orient='records'),
+            }
+
+        elif(selected_city_value == 'All')&(selected_category_value != 'All')&(selected_range_value == 'All')&(selected_pack_value != 'All'):
+            filtered_output = output_month[(output_month['Category'] == selected_category_value)&(output_month['Pack'] == selected_pack_value)]
+            average_throughput = filtered_output.groupby(['CITY','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_range = filtered_output.groupby(['CITY','STORE','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_category = filtered_output.groupby(['CITY','STORE','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_category['ThroughputSales']=average_throughput_category['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_city = filtered_output.groupby(['CITY','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_city['ThroughputSales']=average_throughput_city['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            result_data = {
+                'average_throughput': average_throughput.to_dict(orient='records'),
+                'average_throughput_range': average_throughput_range.to_dict(orient='records'),
+                'average_throughput_city': average_throughput_city.to_dict(orient='records'),
+                'average_throughput_category': average_throughput_category.to_dict(orient='records')
+            }
+        elif(selected_city_value == 'All')&(selected_category_value != 'All')&(selected_range_value == 'All')&(selected_pack_value == 'All'):
+            filtered_output = output_month[(output_month['Category'] == selected_category_value)]
             average_throughput = filtered_output.groupby(['CITY','Category','Range'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
@@ -447,8 +574,8 @@ def analyze_data():
                 'average_throughput_category': average_throughput_category.to_dict(orient='records')
             }
 
-        elif(selected_city_value != 'All')&(selected_category_value == 'All')&(selected_store_value != 'All'):
-            filtered_output = output[(output['CITY'] == selected_city_value)& (output['STORE'] == selected_store_value)]
+        elif(selected_city_value != 'All')&(selected_category_value == 'All')&(selected_store_value != 'All')&(selected_pack_value == 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)& (output_month['STORE'] == selected_store_value)]
             average_throughput = filtered_output.groupby(['CITY','STORE','Category'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
@@ -460,8 +587,21 @@ def analyze_data():
                 'average_throughput_range': average_throughput_range.to_dict(orient='records'),
             }
 
-        elif(selected_city_value != 'All')&(selected_category_value == 'All')&(selected_store_value == 'All'):
-            filtered_output = output[(output['CITY'] == selected_city_value)]
+        elif(selected_city_value != 'All')&(selected_category_value == 'All')&(selected_store_value != 'All')&(selected_pack_value != 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)& (output_month['STORE'] == selected_store_value)&(output_month['Pack'] == selected_pack_value)]
+            average_throughput = filtered_output.groupby(['CITY','STORE','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_range = filtered_output.groupby(['CITY','STORE','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            result_data = {
+                'average_throughput': average_throughput.to_dict(orient='records'),
+                'average_throughput_range': average_throughput_range.to_dict(orient='records'),
+            }
+
+        elif(selected_city_value != 'All')&(selected_category_value == 'All')&(selected_store_value == 'All')&(selected_pack_value == 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)]
             average_throughput = filtered_output.groupby(['CITY','Category','Range'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
@@ -479,9 +619,29 @@ def analyze_data():
                 'average_throughput_city': average_throughput_city.to_dict(orient='records'),
                 'average_throughput_category': average_throughput_category.to_dict(orient='records')
             }
+        
+        elif(selected_city_value != 'All')&(selected_category_value == 'All')&(selected_store_value == 'All')&(selected_pack_value != 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)&(output_month['Pack'] == selected_pack_value)]
+            average_throughput = filtered_output.groupby(['CITY','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
-        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value == 'All')&(selected_range_value == 'All'):
-            filtered_output = output[(output['CITY'] == selected_city_value)&(output['Category'] == selected_category_value)]
+            average_throughput_range = filtered_output.groupby(['CITY','STORE','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_category = filtered_output.groupby(['CITY','STORE','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_category['ThroughputSales']=average_throughput_category['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_city = filtered_output.groupby(['CITY','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_city['ThroughputSales']=average_throughput_city['ThroughputSales'].apply(lambda x: f'{x}%')
+            result_data = {
+                'average_throughput': average_throughput.to_dict(orient='records'),
+                'average_throughput_range': average_throughput_range.to_dict(orient='records'),
+                'average_throughput_city': average_throughput_city.to_dict(orient='records'),
+                'average_throughput_category': average_throughput_category.to_dict(orient='records')
+            }
+
+        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value == 'All')&(selected_range_value == 'All')&(selected_pack_value == 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)&(output_month['Category'] == selected_category_value)]
             average_throughput = filtered_output.groupby(['CITY','Category','Range'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
@@ -501,8 +661,29 @@ def analyze_data():
                 'average_throughput_category': average_throughput_category.to_dict(orient='records')
             }
 
-        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value != 'All')&(selected_range_value == 'All'):
-            filtered_output = output[(output['CITY'] == selected_city_value)&(output['Category'] == selected_category_value)&(output['STORE'] == selected_store_value)]
+        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value == 'All')&(selected_range_value == 'All')&(selected_pack_value != 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)&(output_month['Category'] == selected_category_value)&(output_month['Pack'] == selected_pack_value)]
+            average_throughput = filtered_output.groupby(['CITY','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_range = filtered_output.groupby(['CITY','STORE','Category','Range','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_category = filtered_output.groupby(['CITY','STORE','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_category['ThroughputSales']=average_throughput_category['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_city = filtered_output.groupby(['CITY','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_city['ThroughputSales']=average_throughput_city['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            result_data = {
+                'average_throughput': average_throughput.to_dict(orient='records'),
+                'average_throughput_range': average_throughput_range.to_dict(orient='records'),
+                'average_throughput_city': average_throughput_city.to_dict(orient='records'),
+                'average_throughput_category': average_throughput_category.to_dict(orient='records')
+            }
+
+        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value != 'All')&(selected_range_value == 'All')&(selected_pack_value == 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)&(output_month['Category'] == selected_category_value)&(output_month['STORE'] == selected_store_value)]
             average_throughput = filtered_output.groupby(['CITY','Category','Range','STORE'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
@@ -514,9 +695,22 @@ def analyze_data():
                 'average_throughput_range': average_throughput_range.to_dict(orient='records'),
             }
         
-        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value == 'All')&(selected_range_value != 'All'):
+        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value != 'All')&(selected_range_value == 'All')&(selected_pack_value != 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)&(output_month['Category'] == selected_category_value)&(output_month['STORE'] == selected_store_value)&(output_month['Pack'] == selected_pack_value)]
+            average_throughput = filtered_output.groupby(['CITY','Category','Range','STORE','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            average_throughput_range = filtered_output.groupby(['CITY','STORE','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            result_data = {
+                'average_throughput': average_throughput.to_dict(orient='records'),
+                'average_throughput_range': average_throughput_range.to_dict(orient='records'),
+            }
+        
+        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value == 'All')&(selected_range_value != 'All')&(selected_pack_value == 'All'):
                     
-            filtered_output = output[(output['CITY'] == selected_city_value)&(output['Category'] == selected_category_value)&(output['Range'] == selected_range_value)]
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)&(output_month['Category'] == selected_category_value)&(output_month['Range'] == selected_range_value)]
             average_throughput = filtered_output.groupby(['CITY','Category','Range','STORE'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
@@ -527,10 +721,33 @@ def analyze_data():
                 'average_throughput': average_throughput.to_dict(orient='records'),
                 'average_throughput_range': average_throughput_range.to_dict(orient='records'),
             }
+        
+        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value == 'All')&(selected_range_value != 'All')&(selected_pack_value != 'All'):
+                    
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)&(output_month['Category'] == selected_category_value)&(output_month['Range'] == selected_range_value)&(output_month['Pack'] == selected_pack_value)]
+            average_throughput = filtered_output.groupby(['CITY','Category','Range','STORE','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
-        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value != 'All')&(selected_range_value != 'All'):
-            filtered_output = output[(output['CITY'] == selected_city_value)&(output['Category'] == selected_category_value)&(output['Range'] == selected_range_value)&(output['STORE'] == selected_store_value)]
+            average_throughput_range = filtered_output.groupby(['CITY','Range','Category','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput_range['ThroughputSales']=average_throughput_range['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            result_data = {
+                'average_throughput': average_throughput.to_dict(orient='records'),
+                'average_throughput_range': average_throughput_range.to_dict(orient='records'),
+            }
+
+        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value != 'All')&(selected_range_value != 'All')&(selected_pack_value == 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)&(output_month['Category'] == selected_category_value)&(output_month['Range'] == selected_range_value)&(output_month['STORE'] == selected_store_value)]
             average_throughput = filtered_output.groupby(['CITY','Category','Range','STORE'])['ThroughputSales'].mean().astype(int).reset_index()
+            average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
+
+            result_data = {
+                'average_throughput': average_throughput.to_dict(orient='records')
+            }
+        
+        elif(selected_city_value != 'All')&(selected_category_value!= 'All')&(selected_store_value != 'All')&(selected_range_value != 'All')&(selected_pack_value != 'All'):
+            filtered_output = output_month[(output_month['CITY'] == selected_city_value)&(output_month['Category'] == selected_category_value)&(output_month['Range'] == selected_range_value)&(output_month['STORE'] == selected_store_value)&(output_month['Pack'] == selected_pack_value)]
+            average_throughput = filtered_output.groupby(['CITY','Category','Range','STORE','Pack'])['ThroughputSales'].mean().astype(int).reset_index()
             average_throughput['ThroughputSales']=average_throughput['ThroughputSales'].apply(lambda x: f'{x}%')
 
             result_data = {
@@ -544,8 +761,7 @@ def analyze_data():
 
     return jsonify(result_data)
     
-    
+
 if __name__ == '__main__':
     os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-    app.run()
-
+    app.run(host ="0.0.0.0")

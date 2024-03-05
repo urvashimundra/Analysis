@@ -103,6 +103,12 @@
                 var selectedRange = $('#rangeDropdown').val();
                 var selectedStore = $('#storeDropdown').val();
                 var selectedCategory = $('#categoryDropdown').val();
+                var selectedPack=$('#packDropdown').val();
+                var startenteredYear = document.getElementById("startyearInput").value;
+                var selectedStartMonth = document.getElementById("startMonthDropdown").value;
+                var selectedEndMonth = document.getElementById("endMonthDropdown").value;
+                var endenteredYear = document.getElementById("endyearInput").value;
+
 
                 $.ajax({
                     type: 'POST',
@@ -111,7 +117,12 @@
                         'selected_city': selectedCity,
                         'selected_range': selectedRange,
                         'selected_store': selectedStore,
-                        'selected_category': selectedCategory
+                        'selected_category': selectedCategory,
+                        'selected_pack': selectedPack,
+                        'selected_start_month': selectedStartMonth, // Add the selected start month to the payload
+                        'selected_end_month': selectedEndMonth,
+                        'entered_start_year': startenteredYear,
+                        'entered_end_year': endenteredYear
                     }),
                     contentType: 'application/json',
                     dataType: 'json',
@@ -204,6 +215,37 @@
         <select id="rangeDropdown">
             <option value="">Select a Range</option>
         </select>
+        <br>
+        <label for="packDropdown">Pack:</label>
+        <select id="packDropdown">
+            <option value="">Select a Pack</option>
+        {% for pack in unique_packs %}
+            <option value="{{ pack }}">{{ pack }}</option>
+        {% endfor %}
+        </select>
+        <label for="startMonthDropdown">Start Month:</label>
+        <select id="startMonthDropdown">
+            <option value="">Select a Start Month</option>
+            {% for month in months %}
+            <option value="{{ month }}">{{ month }}</option>
+            {% endfor %}
+        </select>
+
+        <br>
+
+        <label for="endMonthDropdown">End Month:</label>
+        <select id="endMonthDropdown">
+            <option value="">Select an End Month</option>
+            {% for month in months %}
+            <option value="{{ month }}">{{ month }}</option>
+            {% endfor %}
+        </select>
+        <label for="startyearInput">Enter Start Month Year:</label>
+        <input type="text" id="startyearInput" name="startyearInput">
+        <label for="endyearInput">Enter end Month Year:</label>
+        <input type="text" id="endyearInput" name="endyearInput">
+
+
         <br>
         <button type="button" id="cityanalyzeButton">Analyze</button>
         <br>
